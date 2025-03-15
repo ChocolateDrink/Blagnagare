@@ -1,1 +1,1 @@
-the name "Blagnagare" is not a misspelling or a bunch of jumbled up characters, it is swedish for "blue rodent" as i was originally going to call this repo "blahaj"
+"Blagnagare" means "blue rodent" in swedish
